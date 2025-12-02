@@ -3,7 +3,7 @@ import {
   Leaf, Navigation, BarChart3, Users, Zap, MapPin, Info, 
   ArrowRight, CheckCircle, Car, TrendingDown, Coins, Activity,
   Menu, Clock, ChevronRight, ArrowRightLeft, Share2, Download, 
-  X, TrendingUp, Scale, Lightbulb, Mountain, TrafficCone 
+  X, TrendingUp, Scale, Lightbulb, Mountain, TrafficCone, Truck, Bus
 } from 'lucide-react';
 
 // --- Main App Component ---
@@ -217,8 +217,21 @@ const DemoSection = () => {
   const [activeRoute, setActiveRoute] = useState('eco');
   const [showIntroModal, setShowIntroModal] = useState(true);
   const [expertMode, setExpertMode] = useState(false); // Presentation Mode Toggle
+  const [vehicleType, setVehicleType] = useState('medium'); // small, medium, large
 
-  // Route Data based on user's logic
+  // Vehicle Logic
+  const vehicleSettings = {
+    small: { label: '소형', fuelMul: 0.8, co2Mul: 0.7, point: 100, icon: <Car size={16}/> },
+    medium: { label: '중형', fuelMul: 1.0, co2Mul: 1.0, point: 150, icon: <Car size={16}/> },
+    large: { label: '대형', fuelMul: 1.4, co2Mul: 1.5, point: 250, icon: <Truck size={16}/> },
+  };
+
+  const currentVehicle = vehicleSettings[vehicleType];
+
+  // Helper to format numbers
+  const fmt = (num) => new Intl.NumberFormat().format(Math.round(num));
+
+  // Route Data based on vehicle type
   const routes = {
     fast: {
       id: 'fast',
@@ -226,8 +239,8 @@ const DemoSection = () => {
       time: '40분',
       distance: '21km',
       cost: '20,700원',
-      fuel: '3,191원',
-      co2: '4.2kg',
+      fuel: `${fmt(3191 * currentVehicle.fuelMul)}원`,
+      co2: `${(4.2 * currentVehicle.co2Mul).toFixed(1)}kg`,
       color: '#3b82f6', // Blue
       path: "M100 500 C 150 450, 180 400, 200 350 S 250 200, 350 150 S 500 100, 600 120",
       description: "최단 거리지만 급경사와 신호 대기가 많아 연비 효율이 떨어집니다.",
@@ -239,8 +252,8 @@ const DemoSection = () => {
       time: '43분', // Slightly slower
       distance: '22.5km',
       cost: '19,500원',
-      fuel: '2,550원', // ~20% efficient
-      co2: '3.1kg', // Reduced CO2
+      fuel: `${fmt(2550 * currentVehicle.fuelMul)}원`, // ~20% efficient base
+      co2: `${(3.1 * currentVehicle.co2Mul).toFixed(1)}kg`, // Reduced CO2
       color: '#22c55e', // Green
       path: "M100 500 C 120 520, 250 500, 300 450 S 400 300, 500 200 S 580 130, 600 120",
       description: "도착은 3분 늦지만, 평지 위주의 정속 주행으로 연료를 20% 절약합니다.",
@@ -265,7 +278,6 @@ const DemoSection = () => {
         </div>
 
         {/* --- DEMO APP CONTAINER --- */}
-        {/* Changed h-screen to h-[800px] to fit in the landing page flow */}
         <div className="flex h-[800px] w-full bg-gray-100 font-sans overflow-hidden relative rounded-2xl shadow-2xl border border-slate-200">
           
           {/* --- Top Bar for Presentation Controls --- */}
@@ -308,14 +320,25 @@ const DemoSection = () => {
               </div>
             </div>
 
-            {/* Transportation Modes */}
-            <div className="flex border-b border-gray-200 bg-white">
-              {['대중교통', '자동차', '도보', '자전거'].map((mode, idx) => (
-                <button key={mode} className={`flex-1 py-3 text-sm font-medium flex items-center justify-center ${idx === 1 ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`}>
-                  {mode === '자동차' && <Car className="w-4 h-4 mr-1" />}
-                  {mode}
-                </button>
-              ))}
+            {/* Vehicle Selection & Type */}
+            <div className="px-4 py-3 bg-slate-50 border-b border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
+                        <Car size={12}/> 차량 설정 (Vehicle Type)
+                    </span>
+                    {expertMode && <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1 rounded border border-indigo-100">차등 정책 적용</span>}
+                </div>
+                <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                    {['small', 'medium', 'large'].map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => setVehicleType(type)}
+                            className={`flex-1 py-1.5 text-xs font-bold rounded transition-colors ${vehicleType === type ? 'bg-slate-800 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                        >
+                            {vehicleSettings[type].label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Route List */}
@@ -352,6 +375,8 @@ const DemoSection = () => {
 
                   <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
                     <span className="font-bold text-green-600">연료비 {routes.eco.fuel} (20% 절약)</span>
+                    <span className="text-slate-400">|</span>
+                    <span className="text-slate-500">배출량 {routes.eco.co2}</span>
                   </div>
 
                   {/* Algorithm Visualization */}
@@ -380,6 +405,9 @@ const DemoSection = () => {
                     <span className="text-2xl font-bold text-gray-800">{routes.fast.time}</span>
                     <span className="text-sm text-gray-500">{routes.fast.distance}</span>
                   </div>
+                  <div className="text-xs text-slate-500 mt-1 mb-2">
+                     예상 연료비: {routes.fast.fuel}
+                  </div>
                   <div className="bg-gray-100 p-2 rounded mt-2">
                     <p className="text-[10px] font-bold text-gray-500 mb-1">비효율 요인 감지</p>
                     <div className="flex flex-wrap gap-1">
@@ -398,9 +426,14 @@ const DemoSection = () => {
                   {activeRoute === 'eco' ? '그린 모빌리티 실천하기' : '안내 시작'}
                </button>
                {activeRoute === 'eco' && (
-                 <p className="text-[10px] text-center mt-2 text-gray-500">
-                   *이 경로 주행 시 탄소 마일리지 <span className="text-green-600 font-bold">150P</span> 적립
-                 </p>
+                 <div className="mt-3 bg-green-50 p-2 rounded border border-green-100 text-center">
+                    <p className="text-xs text-green-800 font-bold mb-0.5">
+                       🌿 탄소 마일리지 <span className="text-lg">{currentVehicle.point}P</span> 적립
+                    </p>
+                    <p className="text-[10px] text-green-600">
+                       *차종({currentVehicle.label})별 탄소 저감 기여도에 따른 차등 지급
+                    </p>
+                 </div>
                )}
             </div>
           </div>
@@ -483,8 +516,8 @@ const DemoSection = () => {
                   <g transform="translate(350, 180)">
                       <rect x="-70" y="-45" width="140" height="40" rx="20" fill="white" className="drop-shadow-lg" />
                       <Leaf x="-55" y="-35" width="20" height="20" className="text-green-500 fill-current" />
-                      <text x="-25" y="-28" className="text-xs font-bold fill-gray-800">CO2 1.1kg 절감</text>
-                      <text x="-25" y="-13" className="text-[10px] fill-green-600">나무 0.2그루 효과</text>
+                      <text x="-25" y="-28" className="text-xs font-bold fill-gray-800">CO2 절감 ({currentVehicle.label})</text>
+                      <text x="-25" y="-13" className="text-[10px] fill-green-600">나무 {(0.2 * currentVehicle.co2Mul).toFixed(1)}그루 효과</text>
                   </g>
                 </>
               )}
@@ -655,6 +688,7 @@ const ImpactSection = () => (
            <ul className="space-y-3 text-sm text-slate-500">
               <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-3 text-green-500"/> 탄소 포인트 제도 연계</li>
               <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-3 text-green-500"/> 자동차 보험료 할인 특약</li>
+              <li className="flex items-center font-bold text-indigo-600"><CheckCircle className="w-5 h-5 mr-3 text-indigo-500"/> 차종별 차등 마일리지 적용 (대형차 감축 유도)</li>
            </ul>
         </div>
       </div>
